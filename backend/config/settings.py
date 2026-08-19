@@ -36,8 +36,8 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": ["forum.authentication.PersonalTokenAuthentication", "rest_framework.authentication.SessionAuthentication"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination", "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
 }
 SPECTACULAR_SETTINGS = {"TITLE": "Verity Forum API", "VERSION": "1.0.0", "SERVE_INCLUDE_SCHEMA": False}
 CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-
