@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+htmlcov/
+node_modules/
+dist/
+.angular/
+*.sqlite3
+.DS_Store
+
