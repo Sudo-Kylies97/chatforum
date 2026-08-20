@@ -74,9 +74,12 @@ Verification:
 ```bash
 .venv/bin/python backend/manage.py test forum
 .venv/bin/python backend/manage.py check
+npm test --prefix frontend -- --browsers=ChromeHeadless --code-coverage
 npm run build --prefix frontend
 ./scripts/api-smoke.sh
 ```
+
+The automated suites mock every AI provider response and connection failure. They do not require `AI_API_KEY`, internet access, Redis, or paid API credits.
 
 The smoke script expects the Docker stack at `localhost:8000`. It logs in with the seeded account and exercises authenticated post creation.
 
@@ -88,4 +91,3 @@ The smoke script expects the Docker stack at `localhost:8000`. It logs in with t
 - Secrets and local databases are ignored. Replace all demo passwords and the Django secret before deployment.
 - Semantic embeddings use 1,536 dimensions; configure a compatible embedding model.
 - The assessment targets fewer than 100 users. Production deployment would additionally require HTTPS, secret management, backups, rate limiting, monitoring, and worker/dead-letter observability.
-

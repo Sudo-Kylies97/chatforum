@@ -4,9 +4,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 htmlcov/
+coverage/
 node_modules/
 dist/
 .angular/
 *.sqlite3
 .DS_Store
-
