@@ -93,7 +93,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 class TokenViewSet(viewsets.ModelViewSet):
     serializer_class = TokenSerializer; http_method_names = ["get", "post", "delete", "head", "options"]
-    def get_queryset(self): return PersonalAPIToken.objects.filter(user=self.request.user)
+    def get_queryset(self): return PersonalAPIToken.objects.filter(user=self.request.user).order_by("-created_at")
     def create(self, request):
         name = str(request.data.get("name", "API token")).strip()[:80]
         token, raw = PersonalAPIToken.issue(request.user, name)

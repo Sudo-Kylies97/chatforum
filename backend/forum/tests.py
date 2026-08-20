@@ -94,3 +94,67 @@ class AIServiceTests(TestCase):
         analyse_post(self.post); self.post.refresh_from_db()
         self.assertEqual(self.post.ai_status, Post.AIStatus.FAILED)
 
+    @patch.dict(os.environ, {"AI_API_KEY":"", "AI_CATEGORISATION_ENABLED":"true", "AI_MODERATION_ENABLED":"true"})
+    def test_missing_api_key_fails_open_without_network(self):
+        from .ai import analyse_post
+        analyse_post(self.post); self.post.refresh_from_db()
+        self.assertEqual(self.post.ai_status, Post.AIStatus.FAILED)
+        self.assertIn("RuntimeError", self.post.ai_moderation_rationale)
+
+    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"false"})
+    def test_embedding_task_marks_disabled_without_provider_call(self):
+        from .tasks import create_post_embedding
+        with patch("forum.tasks.embed_text") as embed:
+            create_post_embedding.run(self.post.id)
+        embed.assert_not_called(); self.post.refresh_from_db()
+        self.assertEqual(self.post.embedding_status, Post.AIStatus.DISABLED)
+
+    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"true"})
+    def test_embedding_failure_is_recorded_and_re_raised_for_retry(self):
+        from .tasks import create_post_embedding
+        with patch("forum.tasks.embed_text", side_effect=ConnectionError("offline")):
+            with self.assertRaises(ConnectionError): create_post_embedding.run(self.post.id)
+        self.post.refresh_from_db(); self.assertEqual(self.post.embedding_status, Post.AIStatus.FAILED)
+
+
+class AuthenticationAndSearchTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("reader", password="password123")
+        self.other = User.objects.create_user("other", password="password123")
+        self.post = Post.objects.create(author=self.other, title="Searchable", body="Clean energy storage")
+        self.client = APIClient()
+
+    def test_password_login_and_logout(self):
+        bad = self.client.post("/api/v1/auth/login/", {"username":"reader", "password":"wrong"})
+        self.assertEqual(bad.status_code, 400)
+        good = self.client.post("/api/v1/auth/login/", {"username":"reader", "password":"password123"})
+        self.assertEqual(good.status_code, 200); self.assertEqual(good.data["username"], "reader")
+        self.assertEqual(self.client.get("/api/v1/auth/me/").status_code, 200)
+        self.assertEqual(self.client.post("/api/v1/auth/logout/").status_code, 204)
+        self.assertIn(self.client.get("/api/v1/auth/me/").status_code, (401, 403))
+
+    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"false"})
+    def test_disabled_semantic_search_never_calls_provider(self):
+        with patch("forum.views.embed_text") as embed:
+            response = self.client.get("/api/v1/posts/search/?q=energy")
+        self.assertEqual(response.status_code, 503); embed.assert_not_called()
+
+    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"true"})
+    @patch("forum.views.embed_text", side_effect=ConnectionError("offline"))
+    def test_search_connection_failure_returns_stable_503(self, embed):
+        response = self.client.get("/api/v1/posts/search/?q=energy")
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.data["detail"], "Semantic search is temporarily unavailable.")
+
+    def test_tokens_are_scoped_to_owner(self):
+        mine, _ = PersonalAPIToken.issue(self.user, "Mine")
+        theirs, _ = PersonalAPIToken.issue(self.other, "Theirs")
+        self.client.force_authenticate(self.user)
+        listed = self.client.get("/api/v1/tokens/").data["results"]
+        self.assertEqual([row["id"] for row in listed], [mine.id])
+        self.assertEqual(self.client.delete(f"/api/v1/tokens/{theirs.id}/").status_code, 404)
+
+    def test_public_post_delete_is_explicitly_rejected(self):
+        self.client.force_authenticate(self.other)
+        response = self.client.delete(f"/api/v1/posts/{self.post.id}/")
+        self.assertEqual(response.status_code, 405)
