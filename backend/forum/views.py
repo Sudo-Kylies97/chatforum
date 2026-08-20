@@ -15,7 +15,7 @@ from .tasks import create_post_embedding
 
 def post_queryset(request):
     likes = Like.objects.filter(post=OuterRef("pk"), user=request.user.pk) if request.user.is_authenticated else Like.objects.none()
-    return Post.objects.select_related("author", "category").prefetch_related("comments__author").annotate(like_count=Count("likes", distinct=True), comment_count=Count("comments", distinct=True), liked_by_me=Exists(likes) if request.user.is_authenticated else Value(False, output_field=BooleanField()))
+    return Post.objects.select_related("author", "category").prefetch_related("comments__author").annotate(like_count=Count("likes", distinct=True), comment_count=Count("comments", distinct=True), liked_by_me=Exists(likes) if request.user.is_authenticated else Value(False, output_field=BooleanField())).order_by("-created_at")
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
@@ -58,8 +58,11 @@ class PostViewSet(viewsets.ModelViewSet):
         post = self.get_object()
         if request.method == "DELETE": Like.objects.filter(post=post, user=request.user).delete(); return Response(status=204)
         if post.author_id == request.user.id: return Response({"detail": "You cannot like your own post."}, status=400)
-        try: Like.objects.create(post=post, user=request.user)
-        except IntegrityError: return Response({"detail": "You already liked this post."}, status=409)
+        try:
+            _, created = Like.objects.get_or_create(post=post, user=request.user)
+        except IntegrityError:
+            created = False
+        if not created: return Response({"detail": "You already liked this post."}, status=409)
         return Response(status=201)
     @action(detail=True, methods=["post"])
     def moderation(self, request, pk=None):
