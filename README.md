@@ -1,0 +1,91 @@
+# Verity Forum
+
+Verity is a text-first web forum built for the Full Stack Software Engineer assessment. Anyone can read discussions; authenticated users can post, comment, and like; moderators make the final call on misinformation labels. AI categorisation is the primary extension, with independently configurable moderation assistance and semantic search.
+
+## Run locally
+
+Requirements: Docker Desktop with Compose. No local Python, Node, PostgreSQL, or Redis installation is required.
+
+```bash
+cp .env.example .env
+docker compose up --build
+```
+
+Open the Angular application at <http://localhost:4200>, API documentation at <http://localhost:8000/api/docs/>, and Django admin at <http://localhost:8000/admin/>. The initial image build can take several minutes.
+
+Demo accounts are recreated safely on every start:
+
+| Role | Username | Password |
+| --- | --- | --- |
+| Regular | `alex` | `VerityDemo123!` |
+| Regular | `sam` | `VerityDemo123!` |
+| Moderator/admin | `moderator` | `VerityMod123!` |
+
+The forum remains fully usable without an AI key: leave `AI_API_KEY` empty and AI operations fail open with visible unavailable states. For live AI features, set a key and OpenAI-compatible models in `.env`.
+
+## Architecture and decisions
+
+- **Django REST Framework** supplies mature password/session authentication, permissions, migrations, admin user management, pagination, and OpenAPI generation without external auth.
+- **Angular** provides a typed, responsive single-page interface. Django session cookies and CSRF protect browser writes.
+- **PostgreSQL + pgvector** is the durable source of truth and supports cosine-distance semantic search without a separate vector database. Feed queries annotate counts and prefetch comments/authors to avoid N+1 access.
+- **Celery + Redis** generate embeddings outside the post request. Categorisation and moderation use bounded synchronous calls so their result is normally available on submission.
+- **Personal API tokens** are random, revocable bearer credentials for automation. Only SHA-256 digests are stored, and the secret is displayed once.
+
+AI pre-flags are visible only to moderators. They never automatically publish a misinformation label: a human moderator must confirm it. Categorisation, moderation, and semantic search can each be enabled independently with `AI_CATEGORISATION_ENABLED`, `AI_MODERATION_ENABLED`, and `AI_SEMANTIC_SEARCH_ENABLED`.
+
+## API usage
+
+All endpoints are under `/api/v1/`. Anonymous clients may list/retrieve posts and categories. Browser clients use `/auth/csrf/` then `/auth/login/`. Automated clients create a token in the Developer Access panel and send it as:
+
+```http
+Authorization: Bearer vf_your_token
+```
+
+Core endpoints:
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET/POST` | `/posts/` | List or create posts |
+| `POST` | `/posts/{id}/comments/` | Add a comment |
+| `POST/DELETE` | `/posts/{id}/like/` | Like or unlike |
+| `POST` | `/posts/{id}/moderation/` | Moderator public-label decision |
+| `POST` | `/posts/{id}/retry_ai/` | Moderator AI retry |
+| `GET` | `/posts/search/?q=…` | Semantic search |
+| `GET/POST/DELETE` | `/tokens/` | Manage personal tokens |
+
+Import [postman/Verity-Forum.postman_collection.json](postman/Verity-Forum.postman_collection.json) and select its local variables. The collection demonstrates login, post creation, comments, likes, moderation, semantic search, and bearer-token use. Before assessment submission, publish that collection from the candidate's Postman workspace and place the public URL here: **`PUBLIC_POSTMAN_URL_PENDING`**.
+
+## Development and verification
+
+For local development without Docker, use Python 3.12+ and Node 22+, run PostgreSQL/pgvector and Redis, then adjust `DATABASE_URL` and `REDIS_URL`:
+
+```bash
+python -m venv .venv
+.venv/bin/pip install -r backend/requirements.txt
+.venv/bin/python backend/manage.py migrate
+.venv/bin/python backend/manage.py seed_demo
+.venv/bin/python backend/manage.py runserver
+npm install --prefix frontend
+npm start --prefix frontend
+```
+
+Verification:
+
+```bash
+.venv/bin/python backend/manage.py test forum
+.venv/bin/python backend/manage.py check
+npm run build --prefix frontend
+./scripts/api-smoke.sh
+```
+
+The smoke script expects the Docker stack at `localhost:8000`. It logs in with the seeded account and exercises authenticated post creation.
+
+## Security and limitations
+
+- Posts and comments intentionally have no update or delete endpoints.
+- Database constraints enforce one like per user/post; the API rejects self-likes.
+- Role enforcement and private AI fields live on the server, not only in Angular.
+- Secrets and local databases are ignored. Replace all demo passwords and the Django secret before deployment.
+- Semantic embeddings use 1,536 dimensions; configure a compatible embedding model.
+- The assessment targets fewer than 100 users. Production deployment would additionally require HTTPS, secret management, backups, rate limiting, monitoring, and worker/dead-letter observability.
+

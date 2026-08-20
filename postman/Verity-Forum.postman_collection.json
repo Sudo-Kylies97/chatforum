@@ -1,0 +1,21 @@
+{
+  "info": {"name": "Verity Forum API", "description": "Local assessment collection. Login stores the CSRF token and session cookie; personal bearer tokens can also be used for automation.", "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"},
+  "variable": [{"key":"baseUrl","value":"http://localhost:8000/api/v1"},{"key":"postId","value":"1"},{"key":"apiToken","value":""}],
+  "item": [
+    {"name":"Authentication","item":[
+      {"name":"Get CSRF cookie","request":{"method":"GET","url":"{{baseUrl}}/auth/csrf/"},"event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('csrfToken', pm.response.json().csrfToken);"]}}]},
+      {"name":"Login as regular user","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"username\":\"sam\",\"password\":\"VerityDemo123!\"}"},"url":"{{baseUrl}}/auth/login/"}},
+      {"name":"Current user with bearer token","request":{"method":"GET","header":[{"key":"Authorization","value":"Bearer {{apiToken}}"}],"url":"{{baseUrl}}/auth/me/"}}
+    ]},
+    {"name":"Forum","item":[
+      {"name":"List posts anonymously","request":{"method":"GET","url":"{{baseUrl}}/posts/"}},
+      {"name":"Create post","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"title\":\"Will batteries reshape cities?\",\"body\":\"I would like to discuss how grid storage could change urban planning.\"}"},"url":"{{baseUrl}}/posts/"},"event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('postId', pm.response.json().id);"]}}]},
+      {"name":"Add comment","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"body\":\"Storage duration seems like the key variable.\"}"},"url":"{{baseUrl}}/posts/{{postId}}/comments/"}},
+      {"name":"Like post","request":{"method":"POST","header":[{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/posts/{{postId}}/like/"}},
+      {"name":"Semantic search","request":{"method":"GET","url":"{{baseUrl}}/posts/search/?q=energy%20storage"}}
+    ]},
+    {"name":"Developer tokens","item":[
+      {"name":"Create personal token","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"name\":\"Postman automation\"}"},"url":"{{baseUrl}}/tokens/"},"event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('apiToken', pm.response.json().token);"]}}]}
+    ]}
+  ]
+}
