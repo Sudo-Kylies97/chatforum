@@ -8,7 +8,7 @@ from pgvector.django import CosineDistance
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from .ai import analyse_post, embed_text, enabled
+from .ai import analyse_post, analyse_thread_vibe, embed_text, enabled
 from .models import Category, Comment, Like, PersonalAPIToken, Post
 from .serializers import CategorySerializer, CommentSerializer, PostSerializer, TokenSerializer, UserSerializer
 from .tasks import create_post_embedding
@@ -53,7 +53,9 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def comments(self, request, pk=None):
         serializer = CommentSerializer(data=request.data); serializer.is_valid(raise_exception=True)
-        serializer.save(post=self.get_object(), author=request.user)
+        post = self.get_object()
+        serializer.save(post=post, author=request.user)
+        analyse_thread_vibe(post)
         return Response(serializer.data, status=201)
     @action(detail=True, methods=["post", "delete"])
     def like(self, request, pk=None):

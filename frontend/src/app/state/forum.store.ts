@@ -20,7 +20,6 @@ export class ForumStore {
 
   initialise(): void {
     this.api.csrf().subscribe({next:()=>this.restoreSession(), error:e=>this.handleError(e)});
-    this.api.categories().subscribe({next:r=>this.categories.set(r.results), error:e=>this.handleError(e)});
     this.loadPosts();
   }
   restoreSession(): void {
@@ -56,4 +55,3 @@ export class ForumStore {
     this.error.set(error instanceof HttpErrorResponse ? (error.error?.detail||'Something went wrong. Please try again.') : 'Something went wrong. Please try again.');
   }
 }
-

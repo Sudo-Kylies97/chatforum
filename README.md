@@ -1,6 +1,6 @@
 # Verity Forum
 
-Verity is a text-first web forum built for the Full Stack Software Engineer assessment. Anyone can read discussions; authenticated users can post, comment, and like; moderators make the final call on misinformation labels. AI categorisation is the primary extension, with independently configurable moderation assistance and semantic search.
+Verity is a text-first web forum built for the Full Stack Software Engineer assessment. Anyone can read discussions; authenticated users can post, comment, and like; moderators make the final call on misinformation labels. The AI extensions are moderation assistance (A), thread vibe analysis (B), and semantic search (C).
 
 ## Run locally
 
@@ -31,7 +31,7 @@ The forum remains fully usable without an AI key: leave `AI_API_KEY` empty and A
 - **Celery + Redis** generate embeddings outside the post request. Categorisation and moderation use bounded synchronous calls so their result is normally available on submission.
 - **Personal API tokens** are random, revocable bearer credentials for automation. Only SHA-256 digests are stored, and the secret is displayed once.
 
-AI pre-flags are visible only to moderators. They never automatically publish a misinformation label: a human moderator must confirm it. Categorisation, moderation, and semantic search can each be enabled independently with `AI_CATEGORISATION_ENABLED`, `AI_MODERATION_ENABLED`, and `AI_SEMANTIC_SEARCH_ENABLED`.
+AI pre-flags are visible only to moderators. They never automatically publish a misinformation label: a human moderator must confirm it. Moderation, vibe analysis, and semantic search can each be enabled independently with `AI_MODERATION_ENABLED`, `AI_VIBE_ENABLED`, and `AI_SEMANTIC_SEARCH_ENABLED`. Vibe is recalculated after comments are added and is displayed as a badge on the post.
 
 ## API usage
 

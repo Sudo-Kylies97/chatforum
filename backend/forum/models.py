@@ -44,6 +44,14 @@ class Post(models.Model):
     ai_model = models.CharField(max_length=120, blank=True)
     embedding = VectorField(dimensions=1536, null=True, blank=True)
     embedding_status = models.CharField(max_length=12, choices=AIStatus.choices, default=AIStatus.PENDING)
+    class Vibe(models.TextChoices):
+        TOXIC = "toxic", "Toxic"
+        CONSTRUCTIVE = "constructive", "Constructive"
+        HUMOROUS = "humorous", "Humorous"
+        INFORMATIVE = "informative", "Informative"
+        UNKNOWN = "unknown", "Unknown"
+    vibe = models.CharField(max_length=16, choices=Vibe.choices, default=Vibe.UNKNOWN)
+    vibe_status = models.CharField(max_length=12, choices=AIStatus.choices, default=AIStatus.DISABLED)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -82,4 +90,3 @@ class PersonalAPIToken(models.Model):
         raw = "vf_" + secrets.token_urlsafe(32)
         token = cls.objects.create(user=user, name=name, prefix=raw[:10], digest=hashlib.sha256(raw.encode()).hexdigest())
         return token, raw
-

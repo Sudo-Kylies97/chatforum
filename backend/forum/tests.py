@@ -79,10 +79,22 @@ class AIServiceTests(TestCase):
     def test_structured_analysis_sets_category_and_private_preflag(self, mock_client):
         from types import SimpleNamespace
         from .ai import analyse_post
-        choice = SimpleNamespace(message=SimpleNamespace(content='{"category":"Technology","misinformation_confidence":0.9,"rationale":"Check this claim"}'))
+        choice = SimpleNamespace(message=SimpleNamespace(content='{"misinformation_confidence":0.9,"rationale":"Check this claim"}'))
         mock_client.return_value.chat.completions.create.return_value = SimpleNamespace(choices=[choice])
         analyse_post(self.post); self.post.refresh_from_db()
-        self.assertEqual(self.post.category, self.category); self.assertTrue(self.post.ai_needs_review); self.assertFalse(self.post.is_misleading)
+        self.assertTrue(self.post.ai_needs_review); self.assertFalse(self.post.is_misleading)
+
+    @patch.dict(os.environ, {"AI_API_KEY":"test", "AI_VIBE_ENABLED":"true"})
+    @patch("forum.ai.client")
+    def test_thread_vibe_uses_comment_context(self, mock_client):
+        from types import SimpleNamespace
+        from .ai import analyse_thread_vibe
+        from .models import Comment
+        Comment.objects.create(post=self.post, author=self.user, body="This is a useful and clear explanation.")
+        choice = SimpleNamespace(message=SimpleNamespace(content='{"vibe":"Constructive"}'))
+        mock_client.return_value.chat.completions.create.return_value = SimpleNamespace(choices=[choice])
+        analyse_thread_vibe(self.post); self.post.refresh_from_db()
+        self.assertEqual(self.post.vibe, Post.Vibe.CONSTRUCTIVE)
 
     @patch.dict(os.environ, {"AI_API_KEY":"test", "AI_CATEGORISATION_ENABLED":"true", "AI_MODERATION_ENABLED":"true"})
     @patch("forum.ai.client")

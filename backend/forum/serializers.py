@@ -27,7 +27,7 @@ class PostSerializer(serializers.ModelSerializer):
     ai_needs_review = serializers.SerializerMethodField()
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "body", "category", "is_misleading", "created_at", "comments", "like_count", "comment_count", "liked_by_me", "ai_status", "embedding_status", "ai_moderation_score", "ai_moderation_rationale", "ai_needs_review"]
+        fields = ["id", "author", "title", "body", "category", "is_misleading", "created_at", "comments", "like_count", "comment_count", "liked_by_me", "ai_status", "embedding_status", "ai_moderation_score", "ai_moderation_rationale", "ai_needs_review", "vibe", "vibe_status"]
         read_only_fields = [f for f in fields if f not in ("title", "body")]
     def _moderator_value(self, obj, field):
         user = self.context["request"].user
@@ -39,4 +39,3 @@ class PostSerializer(serializers.ModelSerializer):
 class TokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = PersonalAPIToken; fields = ["id", "name", "prefix", "created_at", "last_used_at", "revoked_at"]; read_only_fields = fields
-

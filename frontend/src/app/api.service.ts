@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 export interface User { id:number; username:string; is_moderator:boolean }
 export interface Category { slug:string; name:string }
 export interface Comment { id:number; author:User; body:string; created_at:string }
-export interface Post { id:number; author:User; title:string; body:string; category:Category|null; is_misleading:boolean; created_at:string; comments:Comment[]; like_count:number; comment_count:number; liked_by_me:boolean; ai_status:string; embedding_status:string; ai_moderation_score:number|null; ai_moderation_rationale:string|null; ai_needs_review:boolean|null }
+export interface Post { id:number; author:User; title:string; body:string; category:Category|null; is_misleading:boolean; created_at:string; comments:Comment[]; like_count:number; comment_count:number; liked_by_me:boolean; ai_status:string; embedding_status:string; ai_moderation_score:number|null; ai_moderation_rationale:string|null; ai_needs_review:boolean|null; vibe:string; vibe_status:string }
 export interface Page<T> { count:number; next:string|null; previous:string|null; results:T[] }
 export interface Token { id:number; name:string; prefix:string; created_at:string; revoked_at:string|null; token?:string }
 
@@ -28,4 +28,3 @@ export class ApiService {
   createToken(name:string){ return this.http.post<Token>(`${this.base}/tokens/`,{name},{withCredentials:true}); }
   revokeToken(id:number){ return this.http.delete(`${this.base}/tokens/${id}/`,{withCredentials:true}); }
 }
-
