@@ -1,0 +1,16 @@
+import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
+import { ApiService, Page, Post, Token, User } from '../api.service';
+import { ForumStore } from './forum.store';
+const user:User={id:2,username:'sam',is_moderator:false};
+const post:Post={id:1,author:{id:1,username:'alex',is_moderator:false},title:'Welcome',body:'Hello',category:null,is_misleading:false,created_at:'2026-01-01T00:00:00Z',comments:[],like_count:0,comment_count:0,liked_by_me:false,ai_status:'failed',embedding_status:'failed',ai_moderation_score:null,ai_moderation_rationale:null,ai_needs_review:null};
+const page=<T>(results:T[]):Page<T>=>({count:results.length,next:null,previous:null,results});
+describe('ForumStore',()=>{let store:ForumStore;let api:jasmine.SpyObj<ApiService>;beforeEach(()=>{api=jasmine.createSpyObj<ApiService>('ApiService',['csrf','me','posts','categories','tokens','login','logout','createPost','comment','like','moderate','retryAi','createToken','revokeToken']);api.csrf.and.returnValue(of({}));api.me.and.returnValue(throwError(()=>new HttpErrorResponse({status:403})));api.posts.and.returnValue(of(page([post])));api.categories.and.returnValue(of(page([])));api.tokens.and.returnValue(of(page([])));TestBed.configureTestingModule({providers:[ForumStore,{provide:ApiService,useValue:api}]});store=TestBed.inject(ForumStore);});
+it('initialises public state without a session or AI connection',()=>{store.initialise();expect(store.user()).toBeNull();expect(store.posts()).toEqual([post]);expect(store.loading()).toBeFalse();});
+it('logs in and refreshes private state',()=>{api.login.and.returnValue(of(user));store.login('sam','secret');expect(store.user()).toEqual(user);expect(store.isAuthenticated()).toBeTrue();expect(api.tokens).toHaveBeenCalled();});
+it('sets filters and clears search deterministically',()=>{store.search('energy');expect(store.searchQuery()).toBe('energy');store.filter('technology');expect(store.selectedCategory()).toBe('technology');expect(store.searchQuery()).toBe('');});
+it('reloads posts after a successful mutation',()=>{api.createPost.and.returnValue(of(post));let completed=false;store.createPost('Title','Body',()=>completed=true);expect(completed).toBeTrue();expect(api.posts).toHaveBeenCalled();});
+it('turns connection failures into user-facing state',()=>{api.posts.and.returnValue(throwError(()=>new HttpErrorResponse({status:503,error:{detail:'Semantic search is temporarily unavailable.'}})));store.loadPosts();expect(store.loading()).toBeFalse();expect(store.error()).toContain('Semantic search');});
+it('holds a new API token only after successful creation',()=>{const token:Token={id:1,name:'CLI',prefix:'vf_123',created_at:'',revoked_at:null,token:'vf_secret'};api.createToken.and.returnValue(of(token));store.createToken('CLI');expect(store.newToken()).toBe('vf_secret');});});
+

@@ -26,7 +26,7 @@ The forum remains fully usable without an AI key: leave `AI_API_KEY` empty and A
 ## Architecture and decisions
 
 - **Django REST Framework** supplies mature password/session authentication, permissions, migrations, admin user management, pagination, and OpenAPI generation without external auth.
-- **Angular** provides a typed, responsive single-page interface. Django session cookies and CSRF protect browser writes.
+- **Angular** provides a typed, responsive single-page interface. Focused OnPush components handle presentation, while a signal-based `ForumStore` owns session, feed, filter, loading/error, moderation, and token state. Django session cookies and CSRF protect browser writes.
 - **PostgreSQL + pgvector** is the durable source of truth and supports cosine-distance semantic search without a separate vector database. Feed queries annotate counts and prefetch comments/authors to avoid N+1 access.
 - **Celery + Redis** generate embeddings outside the post request. Categorisation and moderation use bounded synchronous calls so their result is normally available on submission.
 - **Personal API tokens** are random, revocable bearer credentials for automation. Only SHA-256 digests are stored, and the secret is displayed once.
