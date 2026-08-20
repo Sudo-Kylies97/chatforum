@@ -1,0 +1,3 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AppHeaderComponent } from './app-header.component';
+describe('AppHeaderComponent',()=>{let fixture:ComponentFixture<AppHeaderComponent>;beforeEach(async()=>{await TestBed.configureTestingModule({imports:[AppHeaderComponent]}).compileComponents();fixture=TestBed.createComponent(AppHeaderComponent);fixture.detectChanges();});it('renders the anonymous login form',()=>expect(fixture.nativeElement.querySelector('form.login')).not.toBeNull());it('emits trimmed login credentials',()=>{const c=fixture.componentInstance;c.username=' sam ';c.password='secret';let value:any;c.login.subscribe(v=>value=v);c.submit();expect(value).toEqual({username:'sam',password:'secret'});});});

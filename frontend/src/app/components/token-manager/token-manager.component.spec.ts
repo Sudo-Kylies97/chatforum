@@ -1,0 +1,3 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TokenManagerComponent } from './token-manager.component';
+describe('TokenManagerComponent',()=>{let fixture:ComponentFixture<TokenManagerComponent>;beforeEach(async()=>{await TestBed.configureTestingModule({imports:[TokenManagerComponent]}).compileComponents();fixture=TestBed.createComponent(TokenManagerComponent);fixture.componentRef.setInput('tokens',[]);fixture.detectChanges();});it('renders developer access controls',()=>expect(fixture.nativeElement.textContent).toContain('Developer access'));it('emits the token name',()=>{let value='';fixture.componentInstance.create.subscribe(v=>value=v);fixture.componentInstance.create.emit('CLI');expect(value).toBe('CLI');});});

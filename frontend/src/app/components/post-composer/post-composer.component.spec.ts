@@ -1,0 +1,3 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { PostComposerComponent } from './post-composer.component';
+describe('PostComposerComponent',()=>{let fixture:ComponentFixture<PostComposerComponent>;beforeEach(async()=>{await TestBed.configureTestingModule({imports:[PostComposerComponent]}).compileComponents();fixture=TestBed.createComponent(PostComposerComponent);fixture.detectChanges();});it('does not publish empty content',()=>{expect(fixture.nativeElement.querySelector('button').disabled).toBeTrue();});it('publishes trimmed content',()=>{const c=fixture.componentInstance;c.title=' Title ';c.body=' Body ';let value:any;c.publish.subscribe(v=>value=v);c.submit();expect(value.title).toBe('Title');expect(value.body).toBe('Body');});});
