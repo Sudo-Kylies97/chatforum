@@ -36,7 +36,7 @@ def me(request): return Response(UserSerializer(request.user).data)
 
 class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
-    http_method_names = ["get", "post", "head", "options"]
+    http_method_names = ["get", "post", "delete", "head", "options"]
     def get_permissions(self):
         return [permissions.AllowAny()] if self.action in ("list", "retrieve", "search") else [permissions.IsAuthenticated()]
     def get_queryset(self):
@@ -48,6 +48,8 @@ class PostViewSet(viewsets.ModelViewSet):
         analyse_post(post)
         try: create_post_embedding.delay(post.pk)
         except Exception: Post.objects.filter(pk=post.pk).update(embedding_status=Post.AIStatus.FAILED)
+    def destroy(self, request, *args, **kwargs):
+        return Response({"detail": "Posts are immutable and cannot be deleted."}, status=405)
     @action(detail=True, methods=["post"])
     def comments(self, request, pk=None):
         serializer = CommentSerializer(data=request.data); serializer.is_valid(raise_exception=True)
