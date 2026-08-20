@@ -3,7 +3,6 @@
   <section class="hero"><p class="eyebrow">CLEARER CONVERSATIONS</p><h1>Share ideas.<br><em>Question thoughtfully.</em></h1><p>A calm, text-first community where context matters and claims receive human review.</p></section>
   @if(store.error()){<p class="error" role="alert">{{store.error()}} <button (click)="store.clearError()" aria-label="Dismiss">×</button></p>}
   @if(store.isAuthenticated()){<post-composer (publish)="store.createPost($event.title,$event.body,$event.done)" />}
-  <feed-toolbar (search)="store.search($event)" />
   <section class="feed" aria-live="polite">
     @if(store.loading()){<p>Loading conversations…</p>}
     @if(!store.loading()&&!store.posts().length){<p>No conversations found.</p>}

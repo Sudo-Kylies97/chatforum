@@ -11,8 +11,7 @@
       {"name":"List posts anonymously","request":{"method":"GET","url":"{{baseUrl}}/posts/"}},
       {"name":"Create post","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"title\":\"Will batteries reshape cities?\",\"body\":\"I would like to discuss how grid storage could change urban planning.\"}"},"url":"{{baseUrl}}/posts/"},"event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('postId', pm.response.json().id);"]}}]},
       {"name":"Add comment","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"body\":\"Storage duration seems like the key variable.\"}"},"url":"{{baseUrl}}/posts/{{postId}}/comments/"}},
-      {"name":"Like post","request":{"method":"POST","header":[{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/posts/{{postId}}/like/"}},
-      {"name":"Semantic search","request":{"method":"GET","url":"{{baseUrl}}/posts/search/?q=energy%20storage"}}
+      {"name":"Like post","request":{"method":"POST","header":[{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"url":"{{baseUrl}}/posts/{{postId}}/like/"}}
     ]},
     {"name":"Developer tokens","item":[
       {"name":"Create personal token","request":{"method":"POST","header":[{"key":"Content-Type","value":"application/json"},{"key":"X-CSRFToken","value":"{{csrfToken}}"}],"body":{"mode":"raw","raw":"{\"name\":\"Postman automation\"}"},"url":"{{baseUrl}}/tokens/"},"event":[{"listen":"test","script":{"exec":["pm.collectionVariables.set('apiToken', pm.response.json().token);"]}}]}

@@ -4,14 +4,12 @@ from django.db import IntegrityError
 from django.db.models import BooleanField, Count, Exists, OuterRef, Value
 from django.middleware.csrf import get_token
 from django.utils import timezone
-from pgvector.django import CosineDistance
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
-from .ai import analyse_post, analyse_thread_vibe, embed_text, enabled
+from .ai import analyse_post, analyse_thread_vibe
 from .models import Category, Comment, Like, PersonalAPIToken, Post
 from .serializers import CategorySerializer, CommentSerializer, PostSerializer, TokenSerializer, UserSerializer
-from .tasks import create_post_embedding
 
 def post_queryset(request):
     likes = Like.objects.filter(post=OuterRef("pk"), user=request.user.pk) if request.user.is_authenticated else Like.objects.none()
@@ -38,7 +36,7 @@ class PostViewSet(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     http_method_names = ["get", "post", "delete", "head", "options"]
     def get_permissions(self):
-        return [permissions.AllowAny()] if self.action in ("list", "retrieve", "search") else [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()] if self.action in ("list", "retrieve") else [permissions.IsAuthenticated()]
     def get_queryset(self):
         qs = post_queryset(self.request)
         category = self.request.query_params.get("category")
@@ -46,8 +44,6 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         post = serializer.save(author=self.request.user)
         analyse_post(post)
-        try: create_post_embedding.delay(post.pk)
-        except Exception: Post.objects.filter(pk=post.pk).update(embedding_status=Post.AIStatus.FAILED)
     def destroy(self, request, *args, **kwargs):
         return Response({"detail": "Posts are immutable and cannot be deleted."}, status=405)
     @action(detail=True, methods=["post"])
@@ -77,18 +73,8 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def retry_ai(self, request, pk=None):
         if not request.user.is_moderator: return Response({"detail": "Moderator access required."}, status=403)
-        post = self.get_object(); analyse_post(post); create_post_embedding.delay(post.pk)
+        post = self.get_object(); analyse_post(post); analyse_thread_vibe(post)
         return Response(self.get_serializer(post_queryset(request).get(pk=post.pk)).data)
-    @action(detail=False, methods=["get"], permission_classes=[permissions.AllowAny])
-    def search(self, request):
-        query = request.query_params.get("q", "").strip()
-        if not enabled("AI_SEMANTIC_SEARCH_ENABLED"): return Response({"detail": "Semantic search is disabled."}, status=503)
-        if len(query) < 2: return Response({"detail": "Search query must contain at least two characters."}, status=400)
-        try:
-            vector = embed_text(query)
-            posts = self.get_queryset().filter(embedding__isnull=False).annotate(distance=CosineDistance("embedding", vector)).order_by("distance")[:20]
-            return Response(self.get_serializer(posts, many=True).data)
-        except Exception: return Response({"detail": "Semantic search is temporarily unavailable."}, status=503)
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all().order_by("name"); serializer_class = CategorySerializer; permission_classes = [permissions.AllowAny]

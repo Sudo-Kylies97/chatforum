@@ -1,6 +1,6 @@
 # Verity Forum
 
-Verity is a text-first web forum built for the Full Stack Software Engineer assessment. Anyone can read discussions; authenticated users can post, comment, and like; moderators make the final call on misinformation labels. The AI extensions are moderation assistance (A), thread vibe analysis (B), and semantic search (C).
+Verity is a text-first web forum built for the Full Stack Software Engineer assessment. Anyone can read discussions; authenticated users can post, comment, and like; moderators make the final call on misinformation labels. The AI extensions are moderation assistance (A) and thread vibe analysis (B).
 
 ## Run locally
 
@@ -27,11 +27,11 @@ The forum remains fully usable without an AI key: leave `AI_API_KEY` empty and A
 
 - **Django REST Framework** supplies mature password/session authentication, permissions, migrations, admin user management, pagination, and OpenAPI generation without external auth.
 - **Angular** provides a typed, responsive single-page interface. Focused OnPush components handle presentation, while a signal-based `ForumStore` owns session, feed, filter, loading/error, moderation, and token state. Django session cookies and CSRF protect browser writes.
-- **PostgreSQL + pgvector** is the durable source of truth and supports cosine-distance semantic search without a separate vector database. Feed queries annotate counts and prefetch comments/authors to avoid N+1 access.
-- **Celery + Redis** generate embeddings outside the post request. Categorisation and moderation use bounded synchronous calls so their result is normally available on submission.
+- **PostgreSQL** is the durable source of truth. Feed queries annotate counts and prefetch comments/authors to avoid N+1 access.
+- **Synchronous AI analysis** keeps moderation and vibe results available immediately for this small assessment deployment, with bounded provider timeouts and fail-open behavior.
 - **Personal API tokens** are random, revocable bearer credentials for automation. Only SHA-256 digests are stored, and the secret is displayed once.
 
-AI pre-flags are visible only to moderators. They never automatically publish a misinformation label: a human moderator must confirm it. Moderation, vibe analysis, and semantic search can each be enabled independently with `AI_MODERATION_ENABLED`, `AI_VIBE_ENABLED`, and `AI_SEMANTIC_SEARCH_ENABLED`. Vibe is recalculated after comments are added and is displayed as a badge on the post.
+AI pre-flags are visible only to moderators. They never automatically publish a misinformation label: a human moderator must confirm it. Moderation and vibe analysis can each be enabled independently with `AI_MODERATION_ENABLED` and `AI_VIBE_ENABLED`. Vibe is recalculated after comments are added and is displayed as a badge on the post.
 
 ## API usage
 
@@ -50,14 +50,13 @@ Core endpoints:
 | `POST/DELETE` | `/posts/{id}/like/` | Like or unlike |
 | `POST` | `/posts/{id}/moderation/` | Moderator public-label decision |
 | `POST` | `/posts/{id}/retry_ai/` | Moderator AI retry |
-| `GET` | `/posts/search/?q=…` | Semantic search |
 | `GET/POST/DELETE` | `/tokens/` | Manage personal tokens |
 
-Import [postman/Verity-Forum.postman_collection.json](postman/Verity-Forum.postman_collection.json) and select its local variables. The collection demonstrates login, post creation, comments, likes, moderation, semantic search, and bearer-token use. Before assessment submission, publish that collection from the candidate's Postman workspace and place the public URL here: **`PUBLIC_POSTMAN_URL_PENDING`**.
+Import [postman/Verity-Forum.postman_collection.json](postman/Verity-Forum.postman_collection.json) and select its local variables. The collection demonstrates login, post creation, comments, likes, moderation, and bearer-token use. Before assessment submission, publish that collection from the candidate's Postman workspace and place the public URL here: **`PUBLIC_POSTMAN_URL_PENDING`**.
 
 ## Development and verification
 
-For local development without Docker, use Python 3.12+ and Node 22+, run PostgreSQL/pgvector and Redis, then adjust `DATABASE_URL` and `REDIS_URL`:
+For local development without Docker, use Python 3.12+ and Node 22+, run PostgreSQL, then adjust `DATABASE_URL`:
 
 ```bash
 python -m venv .venv
@@ -89,5 +88,4 @@ The smoke script expects the Docker stack at `localhost:8000`. It logs in with t
 - Database constraints enforce one like per user/post; the API rejects self-likes.
 - Role enforcement and private AI fields live on the server, not only in Angular.
 - Secrets and local databases are ignored. Replace all demo passwords and the Django secret before deployment.
-- Semantic embeddings use 1,536 dimensions; configure a compatible embedding model.
 - The assessment targets fewer than 100 users. Production deployment would additionally require HTTPS, secret management, backups, rate limiting, monitoring, and worker/dead-letter observability.

@@ -4,7 +4,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from .models import Category, Like, PersonalAPIToken, Post, User
 
-AI_OFF = {"AI_CATEGORISATION_ENABLED": "false", "AI_MODERATION_ENABLED": "false", "AI_SEMANTIC_SEARCH_ENABLED": "false"}
+AI_OFF = {"AI_MODERATION_ENABLED": "false", "AI_VIBE_ENABLED": "false"}
 
 class ForumAPITests(TestCase):
     def setUp(self):
@@ -19,8 +19,7 @@ class ForumAPITests(TestCase):
         self.assertIn(self.client.post("/api/v1/posts/", {"title":"No", "body":"Anonymous"}).status_code, (401, 403))
 
     @patch.dict(os.environ, AI_OFF)
-    @patch("forum.views.create_post_embedding.delay")
-    def test_authenticated_user_can_create_immutable_post(self, delay):
+    def test_authenticated_user_can_create_immutable_post(self):
         self.client.force_authenticate(self.sam)
         response = self.client.post("/api/v1/posts/", {"title":"Created", "body":"A new contribution"})
         self.assertEqual(response.status_code, 201)
@@ -74,7 +73,7 @@ class AIServiceTests(TestCase):
         self.category = Category.objects.create(name="Technology", slug="technology")
         self.post = Post.objects.create(author=self.user, title="Chip update", body="A factual claim")
 
-    @patch.dict(os.environ, {"AI_API_KEY":"test", "AI_CATEGORISATION_ENABLED":"true", "AI_MODERATION_ENABLED":"true", "AI_MODERATION_THRESHOLD":"0.75"})
+    @patch.dict(os.environ, {"AI_API_KEY":"test", "AI_MODERATION_ENABLED":"true", "AI_MODERATION_THRESHOLD":"0.75"})
     @patch("forum.ai.client")
     def test_structured_analysis_sets_category_and_private_preflag(self, mock_client):
         from types import SimpleNamespace
@@ -96,7 +95,7 @@ class AIServiceTests(TestCase):
         analyse_thread_vibe(self.post); self.post.refresh_from_db()
         self.assertEqual(self.post.vibe, Post.Vibe.CONSTRUCTIVE)
 
-    @patch.dict(os.environ, {"AI_API_KEY":"test", "AI_CATEGORISATION_ENABLED":"true", "AI_MODERATION_ENABLED":"true"})
+    @patch.dict(os.environ, {"AI_API_KEY":"test", "AI_MODERATION_ENABLED":"true"})
     @patch("forum.ai.client")
     def test_malformed_ai_response_fails_open(self, mock_client):
         from types import SimpleNamespace
@@ -106,30 +105,14 @@ class AIServiceTests(TestCase):
         analyse_post(self.post); self.post.refresh_from_db()
         self.assertEqual(self.post.ai_status, Post.AIStatus.FAILED)
 
-    @patch.dict(os.environ, {"AI_API_KEY":"", "AI_CATEGORISATION_ENABLED":"true", "AI_MODERATION_ENABLED":"true"})
+    @patch.dict(os.environ, {"AI_API_KEY":"", "AI_MODERATION_ENABLED":"true"})
     def test_missing_api_key_fails_open_without_network(self):
         from .ai import analyse_post
         analyse_post(self.post); self.post.refresh_from_db()
         self.assertEqual(self.post.ai_status, Post.AIStatus.FAILED)
         self.assertIn("RuntimeError", self.post.ai_moderation_rationale)
 
-    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"false"})
-    def test_embedding_task_marks_disabled_without_provider_call(self):
-        from .tasks import create_post_embedding
-        with patch("forum.tasks.embed_text") as embed:
-            create_post_embedding.run(self.post.id)
-        embed.assert_not_called(); self.post.refresh_from_db()
-        self.assertEqual(self.post.embedding_status, Post.AIStatus.DISABLED)
-
-    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"true"})
-    def test_embedding_failure_is_recorded_and_re_raised_for_retry(self):
-        from .tasks import create_post_embedding
-        with patch("forum.tasks.embed_text", side_effect=ConnectionError("offline")):
-            with self.assertRaises(ConnectionError): create_post_embedding.run(self.post.id)
-        self.post.refresh_from_db(); self.assertEqual(self.post.embedding_status, Post.AIStatus.FAILED)
-
-
-class AuthenticationAndSearchTests(TestCase):
+class AuthenticationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user("reader", password="password123")
         self.other = User.objects.create_user("other", password="password123")
@@ -144,19 +127,6 @@ class AuthenticationAndSearchTests(TestCase):
         self.assertEqual(self.client.get("/api/v1/auth/me/").status_code, 200)
         self.assertEqual(self.client.post("/api/v1/auth/logout/").status_code, 204)
         self.assertIn(self.client.get("/api/v1/auth/me/").status_code, (401, 403))
-
-    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"false"})
-    def test_disabled_semantic_search_never_calls_provider(self):
-        with patch("forum.views.embed_text") as embed:
-            response = self.client.get("/api/v1/posts/search/?q=energy")
-        self.assertEqual(response.status_code, 503); embed.assert_not_called()
-
-    @patch.dict(os.environ, {"AI_SEMANTIC_SEARCH_ENABLED":"true"})
-    @patch("forum.views.embed_text", side_effect=ConnectionError("offline"))
-    def test_search_connection_failure_returns_stable_503(self, embed):
-        response = self.client.get("/api/v1/posts/search/?q=energy")
-        self.assertEqual(response.status_code, 503)
-        self.assertEqual(response.data["detail"], "Semantic search is temporarily unavailable.")
 
     def test_tokens_are_scoped_to_owner(self):
         mine, _ = PersonalAPIToken.issue(self.user, "Mine")

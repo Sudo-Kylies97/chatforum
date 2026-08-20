@@ -27,7 +27,7 @@ class PostSerializer(serializers.ModelSerializer):
     ai_needs_review = serializers.SerializerMethodField()
     class Meta:
         model = Post
-        fields = ["id", "author", "title", "body", "category", "is_misleading", "created_at", "comments", "like_count", "comment_count", "liked_by_me", "ai_status", "embedding_status", "ai_moderation_score", "ai_moderation_rationale", "ai_needs_review", "vibe", "vibe_status"]
+        fields = ["id", "author", "title", "body", "category", "is_misleading", "created_at", "comments", "like_count", "comment_count", "liked_by_me", "ai_status", "ai_moderation_score", "ai_moderation_rationale", "ai_needs_review", "vibe", "vibe_status"]
         read_only_fields = [f for f in fields if f not in ("title", "body")]
     def _moderator_value(self, obj, field):
         user = self.context["request"].user

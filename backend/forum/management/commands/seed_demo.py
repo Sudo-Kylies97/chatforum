@@ -13,7 +13,7 @@ class Command(BaseCommand):
         sam.set_password("VerityDemo123!"); sam.save()
         mod, _ = User.objects.get_or_create(username="moderator", defaults={"email": "moderator@example.com", "role": User.Role.MODERATOR, "is_staff": True})
         mod.set_password("VerityMod123!"); mod.save()
-        post, _ = Post.objects.get_or_create(author=alex, title="Welcome to Verity", defaults={"body": "A thoughtful place to exchange ideas and ask useful questions.", "category": categories["community"], "ai_status": Post.AIStatus.COMPLETE, "embedding_status": Post.AIStatus.DISABLED})
+        post, _ = Post.objects.get_or_create(author=alex, title="Welcome to Verity", defaults={"body": "A thoughtful place to exchange ideas and ask useful questions.", "category": categories["community"], "ai_status": Post.AIStatus.COMPLETE, "vibe_status": Post.AIStatus.DISABLED})
         comment, _ = Comment.objects.get_or_create(post=post, author=sam, body="Glad to be here. What should we discuss first?")
         Like.objects.get_or_create(post=post, user=sam)
         self.stdout.write(self.style.SUCCESS("Demo users and forum data are ready."))

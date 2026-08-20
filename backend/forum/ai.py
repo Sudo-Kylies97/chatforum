@@ -27,5 +27,3 @@ def analyse_thread_vibe(post):
     try:
         result=client().chat.completions.create(model=os.getenv("AI_CHAT_MODEL","gpt-4o-mini"),response_format={"type":"json_object"},messages=[{"role":"user","content":prompt}]);value=str(json.loads(result.choices[0].message.content)["vibe"]).title();mapped={"Toxic":"toxic","Constructive":"constructive","Humorous":"humorous","Informative":"informative"}.get(value,"unknown");Post.objects.filter(pk=post.pk).update(vibe=mapped,vibe_status=Post.AIStatus.COMPLETE)
     except Exception: Post.objects.filter(pk=post.pk).update(vibe_status=Post.AIStatus.FAILED)
-def embed_text(text):
-    return client().embeddings.create(model=os.getenv("AI_EMBEDDING_MODEL","text-embedding-3-small"),input=text).data[0].embedding

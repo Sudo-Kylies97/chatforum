@@ -11,7 +11,6 @@ export class ForumStore {
   readonly categories = signal<Category[]>([]);
   readonly tokens = signal<Token[]>([]);
   readonly selectedCategory = signal('');
-  readonly searchQuery = signal('');
   readonly loading = signal(false);
   readonly error = signal('');
   readonly newToken = signal('');
@@ -34,10 +33,9 @@ export class ForumStore {
   }
   loadPosts(): void {
     this.loading.set(true);
-    this.api.posts(this.selectedCategory(),this.searchQuery()).pipe(finalize(()=>this.loading.set(false))).subscribe({next:r=>this.posts.set(Array.isArray(r)?r:r.results),error:e=>this.handleError(e)});
+    this.api.posts(this.selectedCategory()).pipe(finalize(()=>this.loading.set(false))).subscribe({next:r=>this.posts.set(Array.isArray(r)?r:r.results),error:e=>this.handleError(e)});
   }
-  filter(category:string): void { this.selectedCategory.set(category);this.searchQuery.set('');this.loadPosts(); }
-  search(query:string): void { this.searchQuery.set(query.trim());this.selectedCategory.set('');this.loadPosts(); }
+  filter(category:string): void { this.selectedCategory.set(category);this.loadPosts(); }
   createPost(title:string,body:string,onComplete?:()=>void): void {
     this.api.createPost(title,body).subscribe({next:()=>{onComplete?.();this.loadPosts()},error:e=>this.handleError(e)});
   }

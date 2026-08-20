@@ -4,7 +4,6 @@ import django.contrib.auth.models
 import django.contrib.auth.validators
 import django.db.models.deletion
 import django.utils.timezone
-import pgvector.django.vector
 from django.conf import settings
 from django.db import migrations, models
 
@@ -84,8 +83,6 @@ class Migration(migrations.Migration):
                 ('ai_moderation_rationale', models.TextField(blank=True)),
                 ('ai_needs_review', models.BooleanField(default=False)),
                 ('ai_model', models.CharField(blank=True, max_length=120)),
-                ('embedding', pgvector.django.vector.VectorField(blank=True, dimensions=1536, null=True)),
-                ('embedding_status', models.CharField(choices=[('pending', 'Pending'), ('complete', 'Complete'), ('failed', 'Failed'), ('disabled', 'Disabled')], default='pending', max_length=12)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('author', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='posts', to=settings.AUTH_USER_MODEL)),
                 ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='posts', to='forum.category')),

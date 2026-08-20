@@ -23,13 +23,6 @@ describe('ApiService', () => {
     request.flush({id:2, username:'sam', is_moderator:false});
   });
 
-  it('encodes semantic-search input', () => {
-    api.posts('', 'energy & cities').subscribe();
-    const request = http.expectOne('/api/v1/posts/search/?q=energy%20%26%20cities');
-    expect(request.request.method).toBe('GET');
-    request.flush([]);
-  });
-
   it('filters the feed by category', () => {
     api.posts('technology').subscribe();
     const request = http.expectOne('/api/v1/posts/?category=technology');
@@ -53,4 +46,3 @@ describe('ApiService', () => {
     request.flush({id:1} as Post);
   });
 });
-

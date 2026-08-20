@@ -2,7 +2,6 @@ import hashlib
 import secrets
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from pgvector.django import VectorField
 
 
 class User(AbstractUser):
@@ -42,8 +41,6 @@ class Post(models.Model):
     ai_moderation_rationale = models.TextField(blank=True)
     ai_needs_review = models.BooleanField(default=False)
     ai_model = models.CharField(max_length=120, blank=True)
-    embedding = VectorField(dimensions=1536, null=True, blank=True)
-    embedding_status = models.CharField(max_length=12, choices=AIStatus.choices, default=AIStatus.PENDING)
     class Vibe(models.TextChoices):
         TOXIC = "toxic", "Toxic"
         CONSTRUCTIVE = "constructive", "Constructive"
