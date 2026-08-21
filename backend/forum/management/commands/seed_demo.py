@@ -13,7 +13,16 @@ class Command(BaseCommand):
         sam.set_password("VerityDemo123!"); sam.save()
         mod, _ = User.objects.get_or_create(username="moderator", defaults={"email": "moderator@example.com", "role": User.Role.MODERATOR, "is_staff": True})
         mod.set_password("VerityMod123!"); mod.save()
-        post, _ = Post.objects.get_or_create(author=alex, title="Welcome to Verity", defaults={"body": "A thoughtful place to exchange ideas and ask useful questions.", "category": categories["community"], "ai_status": Post.AIStatus.COMPLETE, "vibe_status": Post.AIStatus.DISABLED})
-        comment, _ = Comment.objects.get_or_create(post=post, author=sam, body="Glad to be here. What should we discuss first?")
-        Like.objects.get_or_create(post=post, user=sam)
-        self.stdout.write(self.style.SUCCESS("Demo users and forum data are ready."))
+        demo_posts = [
+            (alex, "Welcome to Verity", "A thoughtful place to exchange ideas and ask useful questions.", "community", False),
+            (sam, "How should we evaluate a strong claim?", "What sources and context help you decide whether an online claim is reliable?", "questions", False),
+            (alex, "A claim worth a moderator review", "This deliberately seeded example demonstrates the public misinformation warning workflow.", "news", True),
+        ]
+        for author, title, body, category, flagged in demo_posts:
+            post, _ = Post.objects.get_or_create(author=author, title=title, defaults={"body": body, "category": categories[category], "ai_status": Post.AIStatus.COMPLETE, "vibe_status": Post.AIStatus.COMPLETE, "vibe": Post.Vibe.CONSTRUCTIVE})
+            if flagged:
+                Post.objects.filter(pk=post.pk).update(is_misleading=True, flagged_by=mod, flagged_at=post.created_at, ai_moderation_score=.92, ai_moderation_rationale="Seeded review example for the moderator demo.", ai_needs_review=False)
+            Comment.objects.get_or_create(post=post, author=sam if author == alex else alex, defaults={"body": "Thanks for sharing this context. I would like to hear another perspective."})
+            if author != sam:
+                Like.objects.get_or_create(post=post, user=sam)
+        self.stdout.write(self.style.SUCCESS("Demo users, posts, comments, likes, categories, and a reviewed warning example are ready."))

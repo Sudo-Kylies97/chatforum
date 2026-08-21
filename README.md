@@ -13,13 +13,19 @@ docker compose up --build
 
 Open the Angular application at <http://localhost:4200>, API documentation at <http://localhost:8000/api/docs/>, and Django admin at <http://localhost:8000/admin/>. The initial image build can take several minutes.
 
-Demo accounts are recreated safely on every start:
+Demo accounts and deterministic dummy data are recreated safely on every start. The dataset includes three posts, comments, likes, five categories, and one moderator-reviewed misinformation example:
 
 | Role | Username | Password |
 | --- | --- | --- |
 | Regular | `alex` | `VerityDemo123!` |
 | Regular | `sam` | `VerityDemo123!` |
 | Moderator/admin | `moderator` | `VerityMod123!` |
+
+To reseed the datastore manually without rebuilding containers:
+
+```bash
+docker compose exec backend python manage.py seed_demo
+```
 
 The forum remains fully usable without an AI key: leave `AI_API_KEY` empty and AI operations fail open with visible unavailable states. For live AI features, set a key and OpenAI-compatible models in `.env`.
 
