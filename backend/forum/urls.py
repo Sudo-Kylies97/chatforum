@@ -6,4 +6,10 @@ router = DefaultRouter()
 router.register("posts", PostViewSet, basename="post")
 router.register("categories", CategoryViewSet)
 router.register("tokens", TokenViewSet, basename="token")
-urlpatterns = [path("auth/csrf/", csrf), path("auth/login/", login_view), path("auth/logout/", logout_view), path("auth/me/", me), path("", include(router.urls))]
+urlpatterns = [
+    path("auth/csrf/", csrf),
+    path("auth/login/", login_view),
+    path("auth/logout/", logout_view),
+    path("auth/me/", me),
+    path("", include(router.urls)),
+]

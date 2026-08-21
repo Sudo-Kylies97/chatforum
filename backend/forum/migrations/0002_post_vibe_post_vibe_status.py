@@ -6,18 +6,37 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('forum', '0001_initial'),
+        ("forum", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='post',
-            name='vibe',
-            field=models.CharField(choices=[('toxic', 'Toxic'), ('constructive', 'Constructive'), ('humorous', 'Humorous'), ('informative', 'Informative'), ('unknown', 'Unknown')], default='unknown', max_length=16),
+            model_name="post",
+            name="vibe",
+            field=models.CharField(
+                choices=[
+                    ("toxic", "Toxic"),
+                    ("constructive", "Constructive"),
+                    ("humorous", "Humorous"),
+                    ("informative", "Informative"),
+                    ("unknown", "Unknown"),
+                ],
+                default="unknown",
+                max_length=16,
+            ),
         ),
         migrations.AddField(
-            model_name='post',
-            name='vibe_status',
-            field=models.CharField(choices=[('pending', 'Pending'), ('complete', 'Complete'), ('failed', 'Failed'), ('disabled', 'Disabled')], default='disabled', max_length=12),
+            model_name="post",
+            name="vibe_status",
+            field=models.CharField(
+                choices=[
+                    ("pending", "Pending"),
+                    ("complete", "Complete"),
+                    ("failed", "Failed"),
+                    ("disabled", "Disabled"),
+                ],
+                default="disabled",
+                max_length=12,
+            ),
         ),
     ]
