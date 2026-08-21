@@ -82,10 +82,4 @@ The automated suites mock every AI provider response and connection failure. The
 
 The smoke script expects the Docker stack at `localhost:8000`. It logs in with the seeded account and exercises authenticated post creation.
 
-## Security and limitations
 
-- Posts and comments intentionally have no update or delete endpoints.
-- Database constraints enforce one like per user/post; the API rejects self-likes.
-- Role enforcement and private AI fields live on the server, not only in Angular.
-- Secrets and local databases are ignored. Replace all demo passwords and the Django secret before deployment.
-- The assessment targets fewer than 100 users. Production deployment would additionally require HTTPS, secret management, backups, rate limiting, monitoring, and worker/dead-letter observability.
